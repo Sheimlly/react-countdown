@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useRef, useEffect } from 'react';
+import React, { Fragment, useState, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
@@ -8,47 +8,100 @@ const App = () => {
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
   
-  const [time, setTime] = useState('00:00')
+  const [timer, setTimer] = useState({
+    remaining: 0,
+    paused: false,
+    display: '00:00'
+  })
 
-  const startCountingDown = (remaining) => {
-    if (remaining >= 0) {
-      let sec = Math.floor(remaining % 60);
-      let min = Math.floor(remaining / 60);
-      setTime(
-        (min < 10 ? `0${min}` : min) + ':' +
-        (sec < 10 ? `0${sec}` : sec)
-      )
+  // Handle timer counting down
+  const startCountingDown = (rem) => {
+    if (rem >= 0) {
+      let sec = Math.floor(rem % 60);
+      let min = Math.floor(rem / 60);
+
+      setTimer(previousTimer => {
+        return {
+          ...previousTimer,
+          remaining: rem,
+          display:
+            (min < 10 ? `0${min}` : min)
+            + ':' +
+            (sec < 10 ? `0${sec}` : sec)
+        }
+      })
+    }
+    else {
+      if (Ref.current) clearInterval(Ref.current);
     }
   }
 
+  // Starting timer on start button click
   const startTimer = () => {
-    let remaining = Math.floor(parseInt(minutes) * 60 + parseInt(seconds));
+    let remaining = timer.remaining ? timer.remaining : Math.floor(parseInt(minutes) * 60 + parseInt(seconds));
     let sec = Math.floor(remaining % 60);
     let min = Math.floor(remaining / 60);
-    remaining -= 1;
 
-    setTime(
-      (min < 10 ? `0${min}` : min) + ':' +
-      (sec < 10 ? `0${sec}` : sec)
-    )
+    setTimer(previousTimer => {
+      return {
+        ...previousTimer,
+        remaining: remaining,
+        display:
+          (min < 10 ? `0${min}` : min)
+          + ':' +
+          (sec < 10 ? `0${sec}` : sec)
+      }
+    })
 
     if (Ref.current) clearInterval(Ref.current);
     const id = setInterval(() => {
+      remaining -= 1;
       startCountingDown(remaining);
-      remaining-=1;
+      setTimer(previousTimer => {
+        return {
+          ...previousTimer,
+          remaining: remaining
+        }
+      })
     }, 1000)
     Ref.current = id;
   }
 
+  // Restets timer
   const resetTimer = () => {
     if (Ref.current) clearInterval(Ref.current);
-    setTime('00:00');
+    setTimer(previousTimer => {
+      return {
+        ...previousTimer,
+        remaining: 0,
+        paused: false,
+        display: '00:00'
+      }
+    })
   }
 
-  /*
-        TODO
-    Pause/Resume
-  */
+  // Pause/Resume timer
+  const pauseTimer = () => {
+    if(timer.paused) {
+      setTimer(previousTimer => {
+        return {
+          ...previousTimer,
+          paused: false
+        }
+      })
+
+      startTimer();
+    }
+    else {
+      if (Ref.current) clearInterval(Ref.current);
+      setTimer(previousTimer => {
+        return {
+          ...previousTimer,
+          paused: true
+        }
+      })
+    }
+  }
 
   return (
     <Fragment>
@@ -62,10 +115,10 @@ const App = () => {
       </label>
 
       <button onClick={startTimer}>Start</button>
-      <button>Pause/Resume</button>
+      <button onClick={pauseTimer}>Pause/Resume</button>
       <button onClick={resetTimer}>Reset</button>
 
-      <h1>{time}</h1>
+      <h1>{timer.display}</h1>
     </Fragment>
   );
 }
